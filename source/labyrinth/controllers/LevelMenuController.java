@@ -10,12 +10,14 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import source.labyrinth.*;
@@ -62,6 +64,9 @@ public class LevelMenuController implements Initializable {
     private ChoiceBox levelSelect;
     @FXML
     private VBox boardContainer;
+    @FXML
+    private HBox silkBagContainer;
+
 
 
     @Override
@@ -132,66 +137,6 @@ public class LevelMenuController implements Initializable {
         }
     }
 
-    private void changeLevelToRender(String nextFileToLoad) {
-        LevelData ld = null;
-        if (nextFileToLoad != null) {
-            ld = LevelIO.readDataFile("source/resources/custom_levels/" + nextFileToLoad + ".txt");
-            board = ld.getBoard();
-        } else {
-            board = new Board(0, 0);
-        }
-
-        if (ld != null) {
-            int[][] previousPlayers = ld.getPlayerStartingPositions();
-            for (int[] playerLocation : previousPlayers) {
-                playerLocations.add(new int[]{playerLocation[0], playerLocation[1]});
-            }
-        }
-
-        silkbagAmounts = new HashMap<>();
-        for (ActionTile.ActionType actionType : ActionTile.ActionType.values()) {
-            silkbagAmounts.put(actionType.name(), (ld != null ? ld.getActionTileAmount(actionType) : 0));
-        }
-        for (FloorTile.FloorType floorType : FloorTile.FloorType.values()) {
-            silkbagAmounts.put(floorType.name(), (ld != null ? ld.getFloorTileAmount(floorType) : 0));
-        }
-    }
-
-    private void renderBoard() {
-        GridPane renderedBoard = new GridPane();
-        renderedBoard.setAlignment(Pos.CENTER);
-        boardContainer.setMinHeight((board.getHeight() * tileRenderSize) + (2 * tileRenderSize));
-        boardContainer.setMinWidth((board.getWidth() * tileRenderSize) + (2 * tileRenderSize));
-
-        // The actual board render
-        for (int x = 0; x < this.board.getWidth(); x++) {
-            for (int y = 0; y < this.board.getHeight(); y++) {
-                FloorTile current = this.board.getTileAt(x, y);
-                StackPane stack;
-
-                if (current != null) {
-                    stack = current.renderTile(tileRenderSize);
-                } else {
-                    Image img = new Image("source/resources/img/tile_none.png", tileRenderSize, tileRenderSize, false, false);
-                    ImageView iv = new ImageView(img);
-                    stack = new StackPane(iv);
-                }
-
-                renderedBoard.add(stack, x, y);
-            }
-        }
-
-        playerLocations.forEach(location -> {
-            int stackpaneLocation = location[0] * board.getHeight() + location[1];
-            StackPane relevantStackPane = (StackPane) renderedBoard.getChildren().get(stackpaneLocation);
-            ImageView playerImage = new ImageView(new Image("source/resources/img/player_default.png", tileRenderSize * playerToTileScale, tileRenderSize * playerToTileScale, false, false));
-            relevantStackPane.getChildren().add(playerImage);
-        });
-
-        boardContainer.getChildren().clear();
-        boardContainer.getChildren().add(renderedBoard);
-    }
-
     /**
      * Return to the main menu screen
      *
@@ -210,6 +155,107 @@ public class LevelMenuController implements Initializable {
             window.show();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * changeLevelToRender loads file by name and refreshes data about level to preview
+     * @param nextFileToLoad name of file
+     */
+    private void changeLevelToRender(String nextFileToLoad) {
+        LevelData ld = null;
+        if (nextFileToLoad != null) {
+            ld = LevelIO.readDataFile("source/resources/" + nextFileToLoad + ".txt");
+            board = ld.getBoard();
+        } else {
+            board = new Board(0, 0);
+        }
+
+        playerLocations.clear();
+        if (ld != null) {
+            int[][] previousPlayers = ld.getPlayerStartingPositions();
+            for (int[] playerLocation : previousPlayers) {
+                playerLocations.add(new int[]{playerLocation[0], playerLocation[1]});
+            }
+        }
+
+        silkbagAmounts = new HashMap<>();
+        for (ActionTile.ActionType actionType : ActionTile.ActionType.values()) {
+            silkbagAmounts.put(actionType.name(), (ld != null ? ld.getActionTileAmount(actionType) : 0));
+        }
+        for (FloorTile.FloorType floorType : FloorTile.FloorType.values()) {
+            silkbagAmounts.put(floorType.name(), (ld != null ? ld.getFloorTileAmount(floorType) : 0));
+        }
+    }
+
+    /**
+     * renderBoard renders board with players
+     */
+    private void renderBoard() {
+        GridPane renderedBoard = new GridPane();
+        renderedBoard.setAlignment(Pos.CENTER);
+        boardContainer.setMinHeight((board.getHeight() * tileRenderSize) + (2 * tileRenderSize));
+        boardContainer.setMinWidth((board.getWidth() * tileRenderSize) + (2 * tileRenderSize));
+
+        // The actual board render
+        for (int x = 0; x < this.board.getWidth(); x++) {
+            for (int y = 0; y < this.board.getHeight(); y++) {
+                FloorTile current = this.board.getTileAt(x,y);
+                StackPane stack;
+
+                if (current != null) {
+                    stack = current.renderTile(tileRenderSize);
+                } else {
+                    Image img = new Image("source/resources/img/tile_none.png", tileRenderSize, tileRenderSize, false, false);
+                    ImageView iv = new ImageView(img);
+                    stack = new StackPane(iv);
+                }
+
+                renderedBoard.add(stack, x, y);
+            }
+        }
+
+        playerLocations.forEach(location -> {
+            int stackpaneLocation = location[0] * board.getHeight() + location[1];
+            StackPane relevantStackPane = (StackPane) renderedBoard.getChildren().get(stackpaneLocation);
+
+            ImageView playerImage = new ImageView(new Image("source/resources/img/player_default.png", tileRenderSize * playerToTileScale, tileRenderSize * playerToTileScale, false, false));
+            relevantStackPane.getChildren().add(playerImage);
+        });
+
+        boardContainer.getChildren().clear();
+        boardContainer.getChildren().add(renderedBoard);
+    }
+
+    /**
+     * renderTiles renders silkbag for preview
+     */
+    public void renderTiles() {
+        String imageURL = "source/resources/img/tile_none.png";
+        silkBagContainer.getChildren().clear();
+        for (FloorTile.FloorType ft : FloorTile.FloorType.values()) {
+            imageURL = ft.imageURL;
+            ImageView tileImg = new ImageView(new Image(imageURL, 64, 64, false, false));
+            StackPane stack = new StackPane(tileImg);
+            Text numOfTiles = new Text("" + silkbagAmounts.get(ft.name()));
+            numOfTiles.setStyle("-fx-font-weight: bold; -fx-font-size: 26px; -fx-stroke: black; -fx-stroke-width: 1px");
+            DropShadow shadow = new DropShadow(7, 0, 0, Color.BLACK);
+            numOfTiles.setEffect(shadow);
+            numOfTiles.setFill(Color.GREEN);
+            stack.getChildren().add(numOfTiles);
+            silkBagContainer.getChildren().add(stack);
+        }
+        for (ActionTile.ActionType at : ActionTile.ActionType.values()) {
+            imageURL = at.imageURL;
+            ImageView tileImg = new ImageView(new Image(imageURL, 64, 64, false, false));
+            StackPane stack = new StackPane(tileImg);
+            Text numOfTiles = new Text("" + silkbagAmounts.get(at.name()));
+            numOfTiles.setStyle("-fx-font-weight: bold; -fx-font-size: 26px; -fx-stroke: black; -fx-stroke-width: 1px");
+            DropShadow shadow = new DropShadow(7, 0, 0, Color.BLACK);
+            numOfTiles.setEffect(shadow);
+            numOfTiles.setFill(Color.GREEN);
+            stack.getChildren().add(numOfTiles);
+            silkBagContainer.getChildren().add(stack);
         }
     }
 
@@ -262,6 +308,9 @@ public class LevelMenuController implements Initializable {
                 System.out.println(selectedLevel);
                 levelHBox.setStyle("-fx-border-color: black;-fx-background-color: #c4ffd5;");
                 renderLeaderBoard();
+                changeLevelToRender(selectedLevel);
+                renderBoard();
+                renderTiles();
             });
             vboxLevels.getChildren().addAll(levelHBox);
         });

@@ -962,10 +962,10 @@ public class LevelController implements Initializable {
 			for (int y = 0; y < this.board.getHeight(); y++) {
 				FloorTile current = this.board.getTileAt(x, y);
 				StackPane stack = current.renderTile(tileRenderSize);
-
-				// Uncomment for coordinates
-				// stack.getChildren().add(new Text("(" + x + ", " + y + ")"));
-
+				if ((board.getTileAt(x,y).getPlayer() != null) && (board.getTileAt(x,y).getPlayer().getIdInGame() == currentPlayer)) {
+					Image select = new Image("source/resources/img/player_selected.png", tileRenderSize*0.6, tileRenderSize*0.6, false, false);
+					stack.getChildren().add(new ImageView(select));
+				}
 				int finalX = x;
 				int finalY = y;
 				stack.setOnMouseClicked(event -> {

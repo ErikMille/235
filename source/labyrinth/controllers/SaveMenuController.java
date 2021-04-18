@@ -12,18 +12,20 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import source.labyrinth.*;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 
 /**
  * SaveMenuController are able to load or delete saves.
@@ -42,11 +44,70 @@ public class SaveMenuController implements Initializable {
 	private TextArea saveDetailTextArea;
 	@FXML
 	private Button loadSaveButton;
+	@FXML
+	private VBox boardContainer;
+	@FXML
+	private HBox silkBagContainer;
+
+	private Player[] players;
+	private Board board;
+	private int tileRenderSize;
+
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		showSaveFile();
 		System.out.println("Created SaveMenuController");
+	}
+	/**
+	 * setupFromSaveFile will refresh data about save for preview
+	 *
+	 * @param saveName The file name of the save file
+	 */
+	private void setupFromSaveFile(String saveName) {
+		FileInputStream fis;
+		ObjectInputStream objectInputStream;
+		try {
+			fis = new FileInputStream("source/resources/saves/" + saveName);
+			objectInputStream = new ObjectInputStream(fis);
+
+			int currentTime = (int) objectInputStream.readObject();
+			String currentLevelName = (String) objectInputStream.readObject();
+			this.players = (Player[]) objectInputStream.readObject();
+			int currentPlayer = (int) objectInputStream.readObject();
+			this.board = (Board) objectInputStream.readObject();
+			FloorTile floorTileToInsert = (FloorTile) objectInputStream.readObject();
+			Object currentTurnPhase = objectInputStream.readObject();
+			SilkBag.setEntireBag((LinkedList<Tile>) objectInputStream.readObject());
+
+			renderBoard();
+
+			objectInputStream.close();
+
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+			System.out.println("Error reading save file");
+		}
+	}
+	/**
+	 * renderBoard renders board with players
+	 */
+	private void renderBoard() {
+		boardContainer.getChildren().clear();
+
+		GridPane renderedBoard = new GridPane();
+		renderedBoard.setAlignment(Pos.CENTER);
+		boardContainer.setMinHeight((board.getHeight() * tileRenderSize) + (2 * tileRenderSize));
+		boardContainer.setMinWidth((board.getWidth() * tileRenderSize) + (2 * tileRenderSize));
+		// The actual board render
+		for (int x = 0; x < this.board.getWidth(); x++) {
+			for (int y = 0; y < this.board.getHeight(); y++) {
+				FloorTile current = this.board.getTileAt(x, y);
+				StackPane stack = current.renderTile(tileRenderSize);
+				renderedBoard.add(stack, x + 1, y + 1);
+			}
+		}
+		boardContainer.getChildren().add(renderedBoard);
 	}
 
 	/**
@@ -82,6 +143,7 @@ public class SaveMenuController implements Initializable {
 				saveFile.setStyle("-fx-border-color: black;-fx-background-color: #ffb5b5;");
 				selectedSaveHBox = saveFile;
 				selectedSaveName = savName;
+				setupFromSaveFile(savName);
 			});
 			vboxSaves.getChildren().addAll(saveFile);
 		});
