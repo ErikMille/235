@@ -195,4 +195,14 @@ public class Board implements Serializable {
 		return canSet;
 	}
 
+	/**
+	 * puts bonus on a random tile
+	 */
+	public void putRandomBonus() {
+		if (Math.random() < 0.25) {
+			int x = (int) (Math.random() * (getWidth()));
+			int y = (int) (Math.random() * (getHeight()));
+			getTileAt(x,y).addBonusAction();
+		}
+	}
 }

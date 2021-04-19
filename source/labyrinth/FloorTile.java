@@ -55,6 +55,7 @@ public class FloorTile extends Tile implements Serializable {
 	private int isOnFireUntil;
 	private int isFrozenUntil;
 	private Player player;
+	private ActionTile.ActionType bonusAction = null;
 
 	/**
 	 * Create a new FloorTile with a certain orientation and FloorType
@@ -128,6 +129,7 @@ public class FloorTile extends Tile implements Serializable {
 	 */
 	public void setPlayer(Player player) {
 		this.player = player;
+		giveAction();
 	}
 
 	/**
@@ -243,6 +245,18 @@ public class FloorTile extends Tile implements Serializable {
 			stack.getChildren().add(playerImageView);
 		}
 
+		if (this.bonusAction != null) {
+			String playerImageURL = "";
+			switch (bonusAction){
+				case FIRE: playerImageURL = ActionTile.ActionType.FIRE.imageURL;
+				break;
+				case DOUBLEMOVE: playerImageURL = ActionTile.ActionType.DOUBLEMOVE.imageURL;
+			}
+			Image playerImage = new Image(playerImageURL, renderSize * playerToTileScaling * 0.5, renderSize * playerToTileScaling * 0.5, false, false);
+			ImageView playerImageView = new ImageView(playerImage);
+			stack.getChildren().add(playerImageView);
+		}
+
 		return stack;
 	}
 
@@ -259,5 +273,28 @@ public class FloorTile extends Tile implements Serializable {
 			toReturn[0] = tmp;
 		}
 		return toReturn;
+	}
+
+	/**
+	 * puts fire or double move action tile on board randomly
+	 */
+	public void addBonusAction() {
+		if ((floorType != FloorType.GOAL) && (bonusAction == null) && (player == null)) {
+			if (Math.random()>0.5) {
+				bonusAction = ActionTile.ActionType.FIRE;
+			} else {
+				bonusAction = ActionTile.ActionType.DOUBLEMOVE;
+			}
+		}
+	}
+
+	/**
+	 * if tile hase bonus action on it, gives that action to player
+	 */
+	private void giveAction() {
+		if ((bonusAction != null) && (this.player != null)){
+			player.setActionAmount(bonusAction,player.getActionAmount(bonusAction)+1);
+			bonusAction = null;
+		}
 	}
 }

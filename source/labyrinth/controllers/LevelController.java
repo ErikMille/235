@@ -385,6 +385,7 @@ public class LevelController implements Initializable {
 	 */
 	private void drawingPhase() {
 		currentTurnPhase = TurnPhases.DRAWING;
+		board.putRandomBonus();
 		renderBoard();
 		updateSubInfoVBoxes();
 		bottomContainer.getChildren().clear();
